@@ -45,6 +45,7 @@ def plot_data(sim,cell):
     plt.imshow(eps_data.transpose(), interpolation='spline36', cmap='binary')
     plt.imshow(ez_data.transpose(), interpolation='spline36', cmap='RdBu', alpha=0.9)
     plt.axis('off')
+    plt.savefig("diffraction.png")
     plt.show()
 
 
