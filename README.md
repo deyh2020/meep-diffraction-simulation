@@ -5,4 +5,4 @@ The purpose of this project is to simulate a diffraction grating using meep.
 
 The following results were created using the diffraction grating code I have created.
 
-![](compressed.gif)
+![](diffractionSimulationcompressed.gif)

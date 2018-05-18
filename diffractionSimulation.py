@@ -1,17 +1,22 @@
 import meep as mp
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import h5py
 
 class globalVariables():
-    waveguideXSize = 200
-    waveguideYSize = 200
+    waveguideXSize = 60
+    waveguideYSize = 60
     epsilonOfMaterial = 1
     epsilonOfBoundary = 1000
     blockXSize = 5
     blockYSize = 15
-    numberOfSlitsForDiffractionGrating = 10
-    diffractionGratingSlitSize = 10
-
+    numberOfSlitsForDiffractionGrating = 5
+    diffractionGratingSlitSize = 6
+    resolution = 10
+    projectName = "diffractionSimulation"
+    h5Name = "ez"
+    imageStorageDirectory = projectName +'-out'
 
 def generateDiffractionBlock(blockx,blocky):
     block = mp.Block(mp.Vector3(globalVariables.blockXSize,globalVariables.blockYSize,0),
@@ -96,19 +101,63 @@ def plot_data(sim,cell):
     plt.imshow(ez_data.transpose(), interpolation='spline36', cmap='RdBu', alpha=0.9)
     plt.axis('off')
     plt.savefig("diffraction_grating.png")
-    plt.show()
 
+
+def pngToGIF():
+    gifCreationString = "convert " + globalVariables.imageStorageDirectory + "/" + globalVariables.projectName + "-" + globalVariables.h5Name + "-*.png " + globalVariables.imageStorageDirectory + "/" + globalVariables.projectName + ".gif"
+    print(gifCreationString)
+    os.system(gifCreationString)
+
+def compressGIF(scalingFactor):
+    print("Did I get here for GIF compression?")
+    gifCompressionString = "gifsicle -O3 --colors=128 --scale=" + str(scalingFactor) + " -i " + globalVariables.imageStorageDirectory + "/" + globalVariables.projectName + ".gif" + " -o " + globalVariables.imageStorageDirectory + "/" + globalVariables.projectName + "compressed" + ".gif"
+    print(gifCompressionString)
+    os.system(gifCompressionString)
+
+def countNumberOfPNG():
+    pngCountString = "ls " + globalVariables.imageStorageDirectory + "/" + "*.png | wc -l"
+    count = os.system(pngCountString)
+    return int(count)
+
+def deletePNG():
+    print("Number of PNG Files in directory before is :" + str(countNumberOfPNG()))
+    deletePNGString = "rm " + globalVariables.imageStorageDirectory + "/" + globalVariables.projectName + "*.png"
+    os.system(deletePNGString)
+    print("Number of PNG Files in directory after is :" + str(countNumberOfPNG()))
+
+def deleteCompressedGIF():
+    pass
+
+
+'''
+Creates a gif from the hdf5 file.
+'''
+def inPlaceGifCreation(compressGIFBool=True, compressGIFScale=0.5 ,deletePNGBool=True,generateGIF=True,deleteUncompressedGIF=False):
+    pngToGIF()
+
+    if(compressGIFBool==True):
+        compressGIF(scalingFactor=compressGIFScale)
+
+    if(deletePNGBool==True):
+        deletePNG()
+
+
+def removeH5Files():
+    pass
 
 if __name__=="__main__":
     #cell, geometry, sources, pml_layers = createDiffractionSlit()
     cell , geometry , sources , pml_layers = createDiffractionGrating()
-    resolution = 10
+    resolution = globalVariables.resolution
     sim = mp.Simulation(cell_size=cell,
                     boundary_layers=pml_layers,
                     geometry=geometry,
                     sources=sources,
                     resolution=resolution)
-    sim.run(mp.at_beginning(mp.output_epsilon),
-        mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
-        until=200)
+    sim.use_output_directory()
+    #sim.run(mp.at_beginning(mp.output_epsilon),
+       # mp.to_appended("ez", mp.at_every(0.6, mp.output_png(mp.Ez,"-Zc dkbluered"))),
+       # until=200)
+    sim.run(mp.at_every(0.6 , mp.output_png(mp.Ez, "-Zc dkbluered")), until=200)
     plot_data(sim,cell)
+    inPlaceGifCreation()
